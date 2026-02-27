@@ -3,7 +3,6 @@ from rest_framework import generics, permissions
 from knox.models import AuthToken
 from rest_framework.response import Response
 from .serializers import RegisterSerializer
-#from .serializers import LoginSerializer
 
 from rest_framework import status
 from django.contrib.auth import authenticate
@@ -29,27 +28,23 @@ class RegisterAPI(generics.GenericAPIView):
             "user": user.username,
             "token": token
         })
-        
+
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from knox.models import AuthToken
+from .serializers import LoginSerializer
+
 class LoginAPI(generics.GenericAPIView):
-    #serializer_class = LoginSerializer   # ✅ ADD THIS
+    serializer_class = LoginSerializer   # ✅ REQUIRED
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        user = authenticate(username=username, password=password)
-
-        if user is None:
-            return Response(
-                {"error": "Invalid credentials"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        token = AuthToken.objects.create(user)[1]
+        user = serializer.validated_data['user']
 
         return Response({
             "user": user.username,
-            "token": token
+            "token": AuthToken.objects.create(user)[1]
         })
-        
